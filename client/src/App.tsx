@@ -1,42 +1,94 @@
-import React, { FC, FormEvent, useEffect, useState } from "react";
-import Form from "./components/Form";
-import Messages from "./components/Messages";
+import React, { FC, useEffect, useState } from "react";
+import Title from "./components/Title/Title";
+import Menu from "./components/Menu/Menu";
+import FormStart from "./components/FormStart/FormStart";
+import Parties from "./components/Parties/Parties";
+import "./App.css";
 
 const url = `ws://localhost:3001`;
 export const socket = new WebSocket(url);
 
 const App: FC = () => {
-  const [messages, setMessages] = useState([]);
+  const [parties, setParties] = useState([]);
   const [connectionOpen, setConnectionOpen] = useState(true);
+  const [showFormStart, setShowFormStart] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleClickPlayer = () => {
+    if (!connectionOpen) {
+      return;
+    }
+
+    setShowFormStart(true);
+  };
+
+  const handleClickObserver = () => {
+    if (!connectionOpen) {
+      return;
+    }
+
+    socket.send("getParties");
+  };
+
+  const handleSubmitFormStart = (e: React.SyntheticEvent) => {
     e.preventDefault();
 
     if (!connectionOpen) {
       return;
     }
 
-    const target = e.target as HTMLFormElement;
-    console.log((target.message as HTMLInputElement).value);
-    socket.send((target.message as HTMLInputElement).value);
+    const target = e.target as typeof e.target & {
+      name: { value: string };
+    };
+
+    socket.send(JSON.stringify({ status: "player", name: target.name.value }));
+  };
+
+  const handleClickParty = (id: string) => {
+    if (!connectionOpen) {
+      return;
+    }
+
+    socket.send(JSON.stringify({ status: "observer", partyId: id }));
+
+    setParties([]);
+  };
+
+  const handleSocketEventMessage = (event: MessageEvent) => {
+    console.log(event.data);
+
+    const data = JSON.parse(event.data);
+
+    if ("parties" in data) {
+      setParties(data.parties);
+    }
+  };
+
+  const handleSocketEventClose = (event: CloseEvent) => {
+    console.log(`Closed ${event.code}`);
+    setConnectionOpen(false);
   };
 
   useEffect(() => {
-    socket.addEventListener("message", (event) => {
-      console.log(event.data);
-      setMessages(JSON.parse(event.data));
-    });
+    socket.addEventListener("message", handleSocketEventMessage);
 
-    socket.onclose = (event) => {
-      console.log(`Closed ${event.code}`);
-      setConnectionOpen(false);
+    socket.addEventListener("close", handleSocketEventClose);
+
+    return () => {
+      socket.removeEventListener("message", handleSocketEventMessage);
+
+      socket.removeEventListener("close", handleSocketEventClose);
     };
   }, []);
 
   return (
     <>
-      <Form onSubmit={handleSubmit} />
-      <Messages messages={messages} />
+      <Title />
+      <Menu
+        onClickPlayer={handleClickPlayer}
+        onClickObserver={handleClickObserver}
+      />
+      {showFormStart && <FormStart onSubmit={handleSubmitFormStart} />}
+      <Parties parties={parties} onClickParty={handleClickParty} />
     </>
   );
 };

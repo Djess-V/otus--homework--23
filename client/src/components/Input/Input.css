@@ -1,0 +1,19 @@
+._input {
+  width: 100%;
+  outline: none;
+  height: 40px;
+  border-radius: 3px;
+  border: none;
+  padding: 10px 20px;
+  transition: all 1s;
+  caret-color: chocolate;
+}
+
+._input:hover {
+  transform: scale(1.05);
+}
+
+.input_formStart {
+  max-width: 400px;
+  margin-right: 20px;
+}

@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
-import messagesReducer from "./sliceMessages";
+import partiesReducer from "./sliceParties";
+import clientsReducer from "./sliceClients";
 
 const store = configureStore({
   reducer: {
-    messages: messagesReducer,
+    parties: partiesReducer,
+    clients: clientsReducer,
   },
 });
 
