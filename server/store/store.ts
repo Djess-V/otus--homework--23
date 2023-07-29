@@ -1,10 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
-import partiesReducer from "./sliceParties";
+import roomsReducer from "./sliceRooms";
 import clientsReducer from "./sliceClients";
 
 const store = configureStore({
   reducer: {
-    parties: partiesReducer,
+    rooms: roomsReducer,
     clients: clientsReducer,
   },
 });

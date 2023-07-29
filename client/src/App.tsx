@@ -1,24 +1,37 @@
 import React, { FC, useEffect, useState } from "react";
 import Title from "./components/Title/Title";
-import Menu from "./components/Menu/Menu";
-import FormStart from "./components/FormStart/FormStart";
-import Parties from "./components/Parties/Parties";
+import StatusSelection from "./components/StatusSelection/StatusSelection";
 import "./App.css";
+import Rooms from "./components/Rooms/Rooms";
+import RoomSelectionMenu from "./components/RoomSelectionMenu/RoomSelectionMenu";
+import Input from "./components/UI/Input/Input";
+import Message from "./components/Message/Message";
+import Game from "./components/Game/Game";
 
 const url = `ws://localhost:3001`;
 export const socket = new WebSocket(url);
 
 const App: FC = () => {
-  const [parties, setParties] = useState([]);
+  const [status, setStatus] = useState<"player" | "observer" | "">("");
+  const [name, setName] = useState<string>("");
+  const [room, setRoom] = useState<IRoom | null>(null);
+  const [showRoomSelection, setShowRoomSelection] = useState(false);
+  const [showStatusSelection, setShowStatusSelection] = useState(true);
+  const [rooms, setRooms] = useState<IRoom[]>([]);
   const [connectionOpen, setConnectionOpen] = useState(true);
-  const [showFormStart, setShowFormStart] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+  const [showRooms, setShowRooms] = useState(false);
+  const [showMessage, setShowMessage] = useState(false);
+  const [start, setStart] = useState(false);
 
   const handleClickPlayer = () => {
     if (!connectionOpen) {
       return;
     }
-
-    setShowFormStart(true);
+    
+    setShowStatusSelection(false);
+    setShowInput(true);
+    setStatus("player");
   };
 
   const handleClickObserver = () => {
@@ -26,40 +39,69 @@ const App: FC = () => {
       return;
     }
 
-    socket.send("getParties");
+    setShowStatusSelection(false);
+    setShowRooms(true);
+    setStatus("observer");
+    socket.send(JSON.stringify({ getAllRooms: true }));
   };
 
-  const handleSubmitFormStart = (e: React.SyntheticEvent) => {
-    e.preventDefault();
+  const handleChangeInput = (e: React.SyntheticEvent) => {
+    if (!(e.target as HTMLInputElement).value) {
+      setShowRoomSelection(false);
+      setShowRooms(false);
+    } else {
+      setShowRoomSelection(true);
+    }
+        
+    setName((e.target as HTMLInputElement).value);
+  };
+    
+  const handleClickCreateRoom = () => {
+    socket.send(JSON.stringify({ status, name, createRoom: true }));
+    setShowInput(false);
+    setShowRoomSelection(false);
+    setShowRooms(false);
+  };
 
+  const handleClickChooseRoom = () => {
+    socket.send(JSON.stringify({ getAllRooms: false }));
+    setShowInput(false);
+    setShowRooms(true);
+  };
+
+  const handleClickRoom = (id: string) => {
     if (!connectionOpen) {
       return;
     }
 
-    const target = e.target as typeof e.target & {
-      name: { value: string };
-    };
-
-    socket.send(JSON.stringify({ status: "player", name: target.name.value }));
-  };
-
-  const handleClickParty = (id: string) => {
-    if (!connectionOpen) {
-      return;
-    }
-
-    socket.send(JSON.stringify({ status: "observer", partyId: id }));
-
-    setParties([]);
+    socket.send(JSON.stringify({ status, name, roomId: id }));
   };
 
   const handleSocketEventMessage = (event: MessageEvent) => {
-    console.log(event.data);
+    const data: IWsData = JSON.parse(event.data);
 
-    const data = JSON.parse(event.data);
+    console.dir(data);
+    if (data.rooms) {
+      setRooms(data.rooms);
+    }
 
-    if ("parties" in data) {
-      setParties(data.parties);
+    if (data.room) {
+      setRoom(data.room);
+      setShowRooms(false);
+
+      if (data.room.playerIds.length === 1) {
+        setShowMessage(true);
+      }
+      
+      if (data.room.playerIds.length === 2 && status === "observer") {
+        setStart(true);
+      } 
+    }
+
+    if (data.start) {      
+        setStart(true);
+        setShowMessage(false); 
+        setShowRoomSelection(false);       
     }
   };
 
@@ -81,15 +123,25 @@ const App: FC = () => {
   }, []);
 
   return (
-    <>
+    <div className="_container">
       <Title />
-      <Menu
+      {showStatusSelection && <StatusSelection
         onClickPlayer={handleClickPlayer}
         onClickObserver={handleClickObserver}
-      />
-      {showFormStart && <FormStart onSubmit={handleSubmitFormStart} />}
-      <Parties parties={parties} onClickParty={handleClickParty} />
-    </>
+      />}
+      {showInput && <Input
+        requared={true}
+        placeholder="Enter your name..."
+        name="name"
+        modify="name"
+        outValue={name}
+        outOnChange={handleChangeInput}
+      />}
+      {showRoomSelection && <RoomSelectionMenu onClickCreateRoom={handleClickCreateRoom} onClickChooseRoom={handleClickChooseRoom}/>}
+      {showRooms && <Rooms status={status} rooms={rooms} onClickRoom={handleClickRoom} />}
+      {showMessage && <Message status={status} roomId={room ? room.roomId : ""}/>}
+      {start && <Game/>}
+    </div>
   );
 };
 

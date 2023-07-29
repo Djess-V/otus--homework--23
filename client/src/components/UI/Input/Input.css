@@ -7,13 +7,14 @@
   padding: 10px 20px;
   transition: all 1s;
   caret-color: chocolate;
+  color: #000
 }
 
 ._input:hover {
   transform: scale(1.05);
 }
 
-.input_formStart {
+.input_name {
   max-width: 400px;
-  margin-right: 20px;
+  margin: 0px auto 20px;
 }

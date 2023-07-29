@@ -12,3 +12,12 @@
 ._button:hover {
   background-color: #3c92c0;
 }
+
+._button:disabled {
+  background-color: #97afbd;
+  cursor: not-allowed;
+}
+
+.btn_formStart {
+  min-width: 125px;
+}

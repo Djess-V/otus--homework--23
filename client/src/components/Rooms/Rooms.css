@@ -1,0 +1,19 @@
+.rooms {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.rooms__title {
+  margin-bottom: 20px;
+}
+
+.rooms__list_item {
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.rooms__list_item:hover {
+  color: #70c1ec;
+}

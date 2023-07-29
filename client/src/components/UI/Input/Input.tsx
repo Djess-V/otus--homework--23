@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import "./Input.css";
 
 interface IProps {
@@ -6,8 +6,9 @@ interface IProps {
   requared?: boolean;
   modify?: string;
   placeholder?: string;
-  value?: string;
   name?: string;
+  outValue?: null | string;
+  outOnChange?: null | ((e: React.SyntheticEvent) => void);
 }
 
 const Input: FC<IProps> = ({
@@ -15,17 +16,22 @@ const Input: FC<IProps> = ({
   requared = false,
   modify = "",
   placeholder = "",
-  value = "",
   name = "",
-}) => (
+  outValue = null,
+  outOnChange = null,
+}) => {
+  const [ value, setValue ] = useState("");
+  
+  return (
   <input
     type={type}
     className={`_input ${modify ? `input_${modify}` : modify}`}
     required={requared}
     name={name}
     placeholder={placeholder}
-    value={value}
+    value={typeof outValue === "string" ? outValue : value}
+    onChange={typeof outOnChange === "function" ?  outOnChange : (e) => setValue(e.target.value)}
   />
-);
+)};
 
 export default Input;
