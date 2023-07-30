@@ -2,13 +2,13 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 
 interface IPayloadAddPlayer {
-  roomId: string; 
-  playerId: string
+  roomId: string;
+  playerId: string;
 }
 
 interface IPayloadAddObserver {
-  roomId: string; 
-  observerId: string
+  roomId: string;
+  observerId: string;
 }
 
 type ICellState = 0 | 1 | 2;
@@ -25,11 +25,11 @@ interface IRoom {
 }
 
 export const createRoom = (roomId: string, playerId: string): IRoom => ({
-    roomId,
-    playerIds: [playerId],
-    observerIds: [],
-    currentFieldState: [...initialFieldState],
-  });
+  roomId,
+  playerIds: [playerId],
+  observerIds: [],
+  currentFieldState: [...initialFieldState],
+});
 
 const initialState: IRoom[] = [];
 
@@ -43,15 +43,18 @@ const roomsSlice = createSlice({
     },
 
     addPlayerToTheRoom: (state, action: PayloadAction<IPayloadAddPlayer>) => {
-      const room = state.find(item => item.roomId === action.payload.roomId);
+      const room = state.find((item) => item.roomId === action.payload.roomId);
 
       room?.playerIds.push(action.payload.playerId);
 
       return state;
     },
 
-    addObserverToTheRoom: (state, action: PayloadAction<IPayloadAddObserver>) => {
-      const room = state.find(item => item.roomId === action.payload.roomId);
+    addObserverToTheRoom: (
+      state,
+      action: PayloadAction<IPayloadAddObserver>,
+    ) => {
+      const room = state.find((item) => item.roomId === action.payload.roomId);
 
       room?.observerIds.push(action.payload.observerId);
 
@@ -60,10 +63,18 @@ const roomsSlice = createSlice({
   },
 });
 
-export const selectRoom = (state: RootState, roomId: string): IRoom => state.rooms.find(item => item.roomId === roomId) as IRoom;
+export const selectRoom = (state: RootState, roomId: string): IRoom =>
+  state.rooms.find((item) => item.roomId === roomId) as IRoom;
 
-export const selectAvailableRoom = (state: RootState): IRoom[] => state.rooms.filter(item => item.playerIds.length === 1);
+export const selectAllRoomsIds = (state: RootState): string[] =>
+  state.rooms.map((item) => item.roomId);
 
-export const { addRoom, addPlayerToTheRoom, addObserverToTheRoom } = roomsSlice.actions;
+export const selectAvailableRoomsIds = (state: RootState): string[] =>
+  state.rooms
+    .filter((item) => item.playerIds.length === 1)
+    .map((item) => item.roomId);
+
+export const { addRoom, addPlayerToTheRoom, addObserverToTheRoom } =
+  roomsSlice.actions;
 
 export default roomsSlice.reducer;
