@@ -2,20 +2,24 @@ import { v4 } from "uuid";
 import WebSocket from "ws";
 import store from "./store/store";
 import {
-  IUser,
   addUser,
   createUser,
+  selectUserById,
   selectUsersByIds,
+  updataUserActive,
 } from "./store/sliceUsers";
 import {
   addObserverToTheRoom,
   addPlayerToTheRoom,
   addRoom,
+  createPlayer,
   createRoom,
   selectAllRoomsIds,
   selectAvailableRoomsIds,
   selectRoom,
+  updateFirstPlayerActive,
 } from "./store/sliceRooms";
+import { transformUserToSend } from "./util";
 
 interface IReceivedData {
   getAllRooms?: boolean;
@@ -23,15 +27,6 @@ interface IReceivedData {
   name?: string;
   createRoom?: true;
   roomId?: string;
-}
-
-function transformUserToSend(user: IUser) {
-  return {
-    id: user.id,
-    name: user.name,
-    status: user.status,
-    active: user.active,
-  };
 }
 
 export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
@@ -53,41 +48,59 @@ export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
     if ("createRoom" in data) {
       const roomId = v4();
 
-      const player = createUser(data.status, data.name!, ws, roomId);
+      const user = createUser(data.status, data.name!, ws, roomId);
 
-      store.dispatch(addUser(player));
+      store.dispatch(addUser(user));
 
-      const userToSend = transformUserToSend(player);
-
-      const room = createRoom(roomId, player.id);
+      let room = createRoom(roomId);
 
       store.dispatch(addRoom(room));
 
+      const player = createPlayer(user);
+
+      store.dispatch(addPlayerToTheRoom({ roomId, player }));
+
+      room = selectRoom(store.getState(), roomId);
+
+      const userToSend = transformUserToSend(user);
+
       ws.send(JSON.stringify({ user: userToSend, room }));
     } else {
-      const player = createUser(data.status, data.name!, ws, data.roomId!);
+      const user = createUser(data.status, data.name!, ws, data.roomId!);
 
-      store.dispatch(addUser(player));
+      store.dispatch(addUser(user));
 
-      store.dispatch(
-        addPlayerToTheRoom({ roomId: data.roomId!, playerId: player.id }),
-      );
+      const player = createPlayer(user);
 
-      const room = selectRoom(store.getState(), data.roomId!);
+      store.dispatch(addPlayerToTheRoom({ roomId: data.roomId!, player }));
 
-      const users = selectUsersByIds(
+      let room = selectRoom(store.getState(), data.roomId!);
+
+      store.dispatch(updataUserActive(room.players[0].id));
+
+      const firstUser = selectUserById(store.getState(), room.players[0].id);
+
+      store.dispatch(updateFirstPlayerActive(data.roomId!));
+
+      room = selectRoom(store.getState(), data.roomId!);
+
+      const firstUserToSend = transformUserToSend(firstUser);
+
+      firstUser.ws.send(JSON.stringify({ user: firstUserToSend }));
+
+      const userToSend = transformUserToSend(user);
+
+      const members = selectUsersByIds(
         store.getState(),
-        room.playerIds,
+        room.players,
         room.observerIds,
       );
 
-      const userToSend = transformUserToSend(player);
-
-      for (const client of users) {
-        if (client.id === player.id) {
-          client.ws.send(JSON.stringify({ user: userToSend, room }));
+      for (const member of members) {
+        if (member.id === player.id) {
+          member.ws.send(JSON.stringify({ user: userToSend, room }));
         } else {
-          client.ws.send(JSON.stringify({ room }));
+          member.ws.send(JSON.stringify({ room }));
         }
       }
     }
@@ -102,6 +115,18 @@ export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
 
     const userToSend = transformUserToSend(observer);
 
-    ws.send(JSON.stringify({ user: userToSend, room }));
+    const members = selectUsersByIds(
+      store.getState(),
+      room.players,
+      room.observerIds,
+    );
+
+    for (const member of members) {
+      if (member.id === observer.id) {
+        member.ws.send(JSON.stringify({ user: userToSend, room }));
+      } else {
+        member.ws.send(JSON.stringify({ room }));
+      }
+    }
   }
 };

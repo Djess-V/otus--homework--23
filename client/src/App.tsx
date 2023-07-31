@@ -8,10 +8,11 @@ import RoomSelectionMenu from "./components/RoomSelectionMenu/RoomSelectionMenu"
 import Input from "./components/UI/Input/Input";
 import Message from "./components/Message/Message";
 import Game from "./components/Game/Game";
+import { socketManager } from ".";
 import { selectConnection } from "./store/sliceConnection";
+import { selectUser } from "./store/sliceUser";
 import { selectRoom } from "./store/sliceRoom";
 import { selectRooms } from "./store/sliceRooms";
-import { socketManager } from ".";
 
 interface IState {
   start: boolean;
@@ -39,6 +40,7 @@ const App: FC = () => {
   const [name, setName] = useState<string>("");
 
   const connection = useSelector(selectConnection);
+  const user = useSelector(selectUser);
   const room = useSelector(selectRoom);
   const rooms = useSelector(selectRooms);
 
@@ -104,11 +106,22 @@ const App: FC = () => {
     socketManager.send({ status, name, roomId: id });
   };
 
+  const handleClickSquare = (id: number) => {
+    if (!connection) {
+      return;
+    }
+
+    if ("active" in user && user.active) {
+      console.log(id);
+      // socketManager.send({ status, name, roomId: id });
+    }
+  };
+
   useEffect(() => {
-    if ("playerIds" in room) {
-      if ((room.playerIds as unknown as string[]).length === 1) {
+    if ("players" in room && room.players) {
+      if (room.players.length === 1) {
         setState({ ...state, showMessage: true, showStatusSelection: false });
-      } else if ((room.playerIds as unknown as string[]).length === 2) {
+      } else if (room.players.length === 2) {
         setState({
           ...state,
           start: true,
@@ -149,12 +162,9 @@ const App: FC = () => {
         <Rooms status={status} rooms={rooms} onClickRoom={handleClickRoom} />
       )}
       {state.showMessage && (
-        <Message
-          status={status}
-          roomId={"roomId" in room ? (room.roomId as unknown as string) : ""}
-        />
+        <Message status={status} roomId={room.roomId ? room.roomId : ""} />
       )}
-      {state.start && <Game />}
+      {state.start && <Game onClickSquare={handleClickSquare} />}
     </div>
   );
 };

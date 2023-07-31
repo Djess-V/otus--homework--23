@@ -2,8 +2,9 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { v4 } from "uuid";
 import WebSocket from "ws";
 import { RootState } from "./store";
+import type { IPlayer } from "./sliceRooms";
 
-export declare interface IUser {
+export interface IUser {
   id: string;
   name: string;
   status: "player" | "observer";
@@ -36,19 +37,29 @@ const usersSlice = createSlice({
       state.push(action.payload);
       return state;
     },
+    updataUserActive: (state, action: PayloadAction<string>) => {
+      const user = state.find((item) => item.id === action.payload) as IUser;
+
+      user.active = !user.active;
+
+      return state;
+    },
     removeUser: (state, action: PayloadAction<string>) =>
       state.filter((client) => client.id !== action.payload),
   },
 });
 
+export const selectUserById = (state: RootState, id: string) =>
+  state.users.find((user) => user.id === id) as IUser;
+
 export const selectUsersByIds = (
   state: RootState,
-  playerIds: string[],
+  players: IPlayer[],
   observerIds: string[],
 ): IUser[] => {
   const users = [];
 
-  for (const id of playerIds) {
+  for (const { id } of players) {
     const user = state.users.find((item) => item.id === id) as IUser;
 
     users.push(user);
@@ -63,6 +74,6 @@ export const selectUsersByIds = (
   return users;
 };
 
-export const { addUser, removeUser } = usersSlice.actions;
+export const { addUser, removeUser, updataUserActive } = usersSlice.actions;
 
 export default usersSlice.reducer;

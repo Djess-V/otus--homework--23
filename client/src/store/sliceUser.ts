@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "./store";
 
 export interface IUser {
   id: string;
@@ -7,7 +8,7 @@ export interface IUser {
   active: boolean;
 }
 
-const initialState: IUser | NonNullable<unknown> = {};
+const initialState: Partial<IUser> = {};
 
 const userSlice = createSlice({
   name: "user",
@@ -17,6 +18,8 @@ const userSlice = createSlice({
     removeUser: () => {},
   },
 });
+
+export const selectUser = (state: RootState) => state.user;
 
 export const { addUser, removeUser } = userSlice.actions;
 

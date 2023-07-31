@@ -1,18 +1,24 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 
-type ICellState = 0 | 1 | 2;
+export interface IPlayer {
+  id: string;
+  name: string;
+  active: boolean;
+}
 
-type IFieldState = ICellState[];
+type ICell = 0 | 1 | 2;
+
+type IField = ICell[];
 
 export interface IRoom {
   roomId: string;
-  playerIds: string[];
+  players: IPlayer[];
   observerIds: string[];
-  currentFieldState: IFieldState;
+  field: IField;
 }
 
-const initialState: IRoom | NonNullable<unknown> = {};
+const initialState: Partial<IRoom> = {};
 
 const roomSlice = createSlice({
   name: "room",
