@@ -7,6 +7,10 @@
   padding: 20px;
 }
 
+.status-selection__title {
+  text-align: center;
+}
+
 .status-selection__buttons {
   margin-top: 20px;
   display: flex;

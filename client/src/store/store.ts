@@ -3,6 +3,7 @@ import connectionReducer from "./sliceConnection";
 import userReducer from "./sliceUser";
 import roomsReducer from "./sliceRooms";
 import roomReducer from "./sliceRoom";
+import endGameReducer from "./sliceEndGame";
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     user: userReducer,
     rooms: roomsReducer,
     room: roomReducer,
+    endGame: endGameReducer,
   },
 });
 

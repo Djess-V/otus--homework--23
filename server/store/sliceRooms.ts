@@ -8,6 +8,12 @@ export interface IPlayer {
   active: boolean;
 }
 
+export interface IPayloadUpdateField {
+  roomId: string;
+  index: number;
+  value: 1 | 2;
+}
+
 interface IPayloadAddPlayer {
   roomId: string;
   player: IPlayer;
@@ -20,7 +26,7 @@ interface IPayloadAddObserver {
 
 type ICell = 0 | 1 | 2;
 
-type IField = ICell[];
+export type IField = ICell[];
 
 const initialField: IField = [...Array(9)].map(() => 0);
 
@@ -29,6 +35,7 @@ interface IRoom {
   players: IPlayer[];
   observerIds: string[];
   field: IField;
+  available: boolean;
 }
 
 export const createPlayer = (user: IUser): IPlayer => ({
@@ -42,6 +49,7 @@ export const createRoom = (roomId: string): IRoom => ({
   players: [],
   observerIds: [],
   field: [...initialField],
+  available: true,
 });
 
 const initialState: IRoom[] = [];
@@ -95,6 +103,26 @@ const roomsSlice = createSlice({
 
       return state;
     },
+
+    updateField: (state, action: PayloadAction<IPayloadUpdateField>) => {
+      const room = state.find(
+        (item) => item.roomId === action.payload.roomId,
+      ) as IRoom;
+
+      room.field[action.payload.index] = action.payload.value;
+
+      return state;
+    },
+
+    unlockRoom: (state, action: PayloadAction<string>) => {
+      const room = state.find(
+        (item) => item.roomId === action.payload,
+      ) as IRoom;
+
+      room.available = false;
+
+      return state;
+    },
   },
 });
 
@@ -102,12 +130,15 @@ export const selectRoom = (state: RootState, roomId: string): IRoom =>
   state.rooms.find((item) => item.roomId === roomId) as IRoom;
 
 export const selectAllRoomsIds = (state: RootState): string[] =>
-  state.rooms.map((item) => item.roomId);
+  state.rooms.filter((item) => item.available).map((item) => item.roomId);
 
 export const selectAvailableRoomsIds = (state: RootState): string[] =>
   state.rooms
-    .filter((item) => item.players.length === 1)
+    .filter((item) => item.available && item.players.length === 1)
     .map((item) => item.roomId);
+
+export const selectFieldByRoomId = (state: RootState, roomId: string): IField =>
+  (state.rooms.find((item) => item.roomId === roomId) as IRoom).field;
 
 export const {
   addRoom,
@@ -115,6 +146,8 @@ export const {
   addObserverToTheRoom,
   updateFirstPlayerActive,
   updatePlayersActive,
+  updateField,
+  unlockRoom,
 } = roomsSlice.actions;
 
 export default roomsSlice.reducer;

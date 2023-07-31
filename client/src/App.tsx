@@ -11,8 +11,10 @@ import Game from "./components/Game/Game";
 import { socketManager } from ".";
 import { selectConnection } from "./store/sliceConnection";
 import { selectUser } from "./store/sliceUser";
-import { selectRoom } from "./store/sliceRoom";
+import { IPlayer, selectRoom } from "./store/sliceRoom";
 import { selectRooms } from "./store/sliceRooms";
+import { selectEndGame } from "./store/sliceEndGame";
+import ModalEndGame from "./components/ModalEndGame/ModalEndGame";
 
 interface IState {
   start: boolean;
@@ -21,6 +23,7 @@ interface IState {
   showRooms: boolean;
   showInput: boolean;
   showMessage: boolean;
+  endGame: boolean;
 }
 
 const initState: IState = {
@@ -30,6 +33,7 @@ const initState: IState = {
   showRooms: false,
   showInput: false,
   showMessage: false,
+  endGame: false,
 };
 
 const App: FC = () => {
@@ -43,6 +47,7 @@ const App: FC = () => {
   const user = useSelector(selectUser);
   const room = useSelector(selectRoom);
   const rooms = useSelector(selectRooms);
+  const endGame = useSelector(selectEndGame);
 
   const handleClickPlayer = () => {
     if (!connection) {
@@ -106,14 +111,39 @@ const App: FC = () => {
     socketManager.send({ status, name, roomId: id });
   };
 
-  const handleClickSquare = (id: number) => {
+  const handleClickSquare = (index: number) => {
     if (!connection) {
       return;
     }
 
-    if ("active" in user && user.active) {
-      console.log(id);
-      // socketManager.send({ status, name, roomId: id });
+    if (endGame.mix) {
+      return;
+    }
+
+    if (user.status === "observer") {
+      return;
+    }
+
+    if (!user.active) {
+      return;
+    }
+
+    if (room.field && room.field[index] !== 0) {
+      return;
+    }
+
+    if (room.players) {
+      const passiveUserId = (
+        room.players.find((item) => !item.active) as IPlayer
+      ).id;
+
+      socketManager.send({
+        roomId: room.roomId ? room.roomId : "",
+        activeUserId: user.id ? user.id : "",
+        passiveUserId,
+        index,
+        value: room.players[0].active ? 1 : 2,
+      });
     }
   };
 
@@ -132,6 +162,12 @@ const App: FC = () => {
       }
     }
   }, [room]);
+
+  useEffect(() => {
+    if (endGame.mix) {
+      setState({ ...state, endGame: true });
+    }
+  }, [endGame]);
 
   return (
     <div className="_container">
@@ -165,6 +201,7 @@ const App: FC = () => {
         <Message status={status} roomId={room.roomId ? room.roomId : ""} />
       )}
       {state.start && <Game onClickSquare={handleClickSquare} />}
+      {state.endGame && <ModalEndGame />}
     </div>
   );
 };

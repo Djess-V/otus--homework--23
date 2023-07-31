@@ -3,11 +3,13 @@ import { closeConnection, openConnection } from "../store/sliceConnection";
 import { IRoom, addRoom } from "../store/sliceRoom";
 import { addRooms } from "../store/sliceRooms";
 import { IUser, addUser } from "../store/sliceUser";
+import { IEndGame, addWinner } from "../store/sliceEndGame";
 
 interface IReceivedData {
   user?: IUser;
   rooms?: string[];
   room?: IRoom;
+  endGame?: IEndGame;
 }
 
 interface ISentData {
@@ -16,6 +18,10 @@ interface ISentData {
   name?: string;
   createRoom?: true;
   roomId?: string;
+  index?: number;
+  value?: 1 | 2;
+  activeUserId?: string;
+  passiveUserId?: string;
 }
 
 export class WSManager {
@@ -60,6 +66,10 @@ export class WSManager {
 
       if (this.receivedData.room) {
         this.store.dispatch(addRoom(this.receivedData.room));
+      }
+
+      if (this.receivedData.endGame) {
+        this.store.dispatch(addWinner(this.receivedData.endGame));
       }
     } catch (error) {
       console.log((error as unknown as Error).message);

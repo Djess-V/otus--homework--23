@@ -20,18 +20,24 @@ const Input: FC<IProps> = ({
   outValue = null,
   outOnChange = null,
 }) => {
-  const [ value, setValue ] = useState("");
-  
+  const [value, setValue] = useState("");
+
   return (
-  <input
-    type={type}
-    className={`_input ${modify ? `input_${modify}` : modify}`}
-    required={requared}
-    name={name}
-    placeholder={placeholder}
-    value={typeof outValue === "string" ? outValue : value}
-    onChange={typeof outOnChange === "function" ?  outOnChange : (e) => setValue(e.target.value)}
-  />
-)};
+    <input
+      type={type}
+      className={`_input ${modify ? `input_${modify}` : modify}`}
+      required={requared}
+      name={name}
+      maxLength={15}
+      placeholder={placeholder}
+      value={typeof outValue === "string" ? outValue : value}
+      onChange={
+        typeof outOnChange === "function"
+          ? outOnChange
+          : (e) => setValue(e.target.value)
+      }
+    />
+  );
+};
 
 export default Input;

@@ -7,10 +7,16 @@ interface IProps {
   index: number;
   value: number;
   onClick: (i: number) => void;
+  winner: boolean;
 }
 
-const Square: FC<IProps> = ({ index, value, onClick }) => (
-  <button className="board-row__square" onClick={() => onClick(index)}>
+const Square: FC<IProps> = ({ index, value, onClick, winner }) => (
+  <button
+    className={`board-row__square ${
+      winner ? "board-row__square_status_winner" : ""
+    }`}
+    onClick={() => onClick(index)}
+  >
     {value !== 0 && (
       <img src={value === 1 ? x : o} alt="Square" width="80%" height="80%" />
     )}

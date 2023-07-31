@@ -16,10 +16,14 @@ import {
   createRoom,
   selectAllRoomsIds,
   selectAvailableRoomsIds,
+  selectFieldByRoomId,
   selectRoom,
+  unlockRoom,
+  updateField,
   updateFirstPlayerActive,
+  updatePlayersActive,
 } from "./store/sliceRooms";
-import { transformUserToSend } from "./util";
+import { calculateWinner, transformUserToSend } from "./util";
 
 interface IReceivedData {
   getAllRooms?: boolean;
@@ -27,6 +31,10 @@ interface IReceivedData {
   name?: string;
   createRoom?: true;
   roomId?: string;
+  index?: number;
+  value?: 1 | 2;
+  activeUserId?: string;
+  passiveUserId?: string;
 }
 
 export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
@@ -124,6 +132,94 @@ export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
     for (const member of members) {
       if (member.id === observer.id) {
         member.ws.send(JSON.stringify({ user: userToSend, room }));
+      } else {
+        member.ws.send(JSON.stringify({ room }));
+      }
+    }
+  } else if ("index" in data) {
+    store.dispatch(
+      updateField({
+        index: data.index!,
+        value: data.value!,
+        roomId: data.roomId!,
+      }),
+    );
+
+    const winTest = calculateWinner(
+      selectFieldByRoomId(store.getState(), data.roomId!),
+    );
+
+    if (winTest) {
+      store.dispatch(unlockRoom(data.roomId!));
+
+      const room = selectRoom(store.getState(), data.roomId!);
+
+      const members = selectUsersByIds(
+        store.getState(),
+        room.players,
+        room.observerIds,
+      );
+
+      for (const member of members) {
+        member.ws.send(
+          JSON.stringify({
+            endGame: { winner: data.activeUserId!, mix: winTest },
+            room,
+          }),
+        );
+      }
+
+      return;
+    }
+
+    if (!selectRoom(store.getState(), data.roomId!).field.includes(0)) {
+      store.dispatch(unlockRoom(data.roomId!));
+
+      const room = selectRoom(store.getState(), data.roomId!);
+
+      const members = selectUsersByIds(
+        store.getState(),
+        room.players,
+        room.observerIds,
+      );
+
+      for (const member of members) {
+        member.ws.send(
+          JSON.stringify({
+            endGame: { winner: "", mix: [] },
+            room,
+          }),
+        );
+      }
+    }
+
+    store.dispatch(updataUserActive(data.activeUserId!));
+
+    store.dispatch(updataUserActive(data.passiveUserId!));
+
+    store.dispatch(updatePlayersActive(data.roomId!));
+
+    const activeUser = selectUserById(store.getState(), data.activeUserId!);
+
+    const passiveUser = selectUserById(store.getState(), data.passiveUserId!);
+
+    const activeUserToSend = transformUserToSend(activeUser);
+
+    const passiveUserToSend = transformUserToSend(passiveUser);
+
+    const room = selectRoom(store.getState(), data.roomId!);
+
+    const members = selectUsersByIds(
+      store.getState(),
+      room.players,
+      room.observerIds,
+    );
+
+    for (const member of members) {
+      if (member.id === data.activeUserId) {
+        member.ws.send(JSON.stringify({ user: activeUserToSend, room }));
+      } else if (member.id === data.passiveUserId) {
+        member.ws.send(JSON.stringify({ user: passiveUserToSend, room }));
       } else {
         member.ws.send(JSON.stringify({ room }));
       }
