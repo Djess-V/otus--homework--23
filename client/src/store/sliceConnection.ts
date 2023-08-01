@@ -1,14 +1,22 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 
-const initialState: boolean = false;
+interface IConnection {
+  state: boolean;
+  message: string;
+}
+
+const initialState: IConnection = { state: false, message: "" };
 
 const connectionSlice = createSlice({
   name: "connection",
   initialState,
   reducers: {
-    openConnection: () => true,
-    closeConnection: () => false,
+    openConnection: (state, action: PayloadAction<string>) => ({
+      state: true,
+      message: action.payload,
+    }),
+    closeConnection: () => ({ state: false, message: "Server went down!" }),
   },
 });
 

@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import store from "./store/store";
+import store from "../store/store";
 import {
   addUser,
   createUser,
@@ -9,7 +9,7 @@ import {
   updataUserRoomId,
   updateUserActiveToFalse,
   updateUserActiveToTrue,
-} from "./store/sliceUsers";
+} from "../store/sliceUsers";
 import {
   addObserverToTheRoom,
   addPlayerToTheRoom,
@@ -25,8 +25,8 @@ import {
   updateField,
   updateFirstPlayerActive,
   updatePlayersActive,
-} from "./store/sliceRooms";
-import { calculateWinner, transformUserToSend } from "./util";
+} from "../store/sliceRooms";
+import { calculateWinner, transformUserToSend } from "../util";
 
 interface IReceivedData {
   getAllRooms?: boolean;
@@ -43,7 +43,7 @@ interface IReceivedData {
   agreement?: boolean;
 }
 
-export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
+export const handleEventMessage = (message: WebSocket.Data, ws: WebSocket) => {
   try {
     if (typeof message !== "string") {
       throw new Error(

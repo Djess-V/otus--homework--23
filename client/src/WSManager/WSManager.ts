@@ -5,6 +5,7 @@ import { addRooms } from "../store/sliceRooms";
 import { IUser, addUser } from "../store/sliceUser";
 import { IEndGame, addWinner } from "../store/sliceEndGame";
 import { updateAgreement, updateOffer } from "../store/sliceOfferAndAgreement";
+import { addLeaverName } from "../store/sliceLeaverName";
 
 interface IReceivedData {
   user?: IUser;
@@ -13,6 +14,8 @@ interface IReceivedData {
   endGame?: IEndGame;
   offer?: true;
   agreement?: boolean;
+  leaverName?: string;
+  connectionMessage?: string;
 }
 
 interface ISentData {
@@ -49,18 +52,21 @@ export class WSManager {
     this.socket.addEventListener("close", this.bindHandleSocketEventClose);
   }
 
-  handleSocketEventOpen = () => {
-    console.log("Connection open!");
-    this.store.dispatch(openConnection());
+  private handleSocketEventOpen = () => {
+    console.log("Connection open!", this.store.getState());
   };
 
-  bindHandleSocketEventOpen = this.handleSocketEventOpen.bind(this);
+  private bindHandleSocketEventOpen = this.handleSocketEventOpen.bind(this);
 
-  handleSocketEventMessage = (event: MessageEvent) => {
+  private handleSocketEventMessage = (event: MessageEvent) => {
     try {
       this.receivedData = JSON.parse(event.data);
 
-      console.dir(this.receivedData);
+      if (this.receivedData.connectionMessage) {
+        this.store.dispatch(
+          openConnection(this.receivedData.connectionMessage),
+        );
+      }
 
       if (this.receivedData.user) {
         this.store.dispatch(addUser(this.receivedData.user));
@@ -76,6 +82,10 @@ export class WSManager {
 
       if (this.receivedData.endGame) {
         this.store.dispatch(addWinner(this.receivedData.endGame));
+      }
+
+      if (this.receivedData.leaverName) {
+        this.store.dispatch(addLeaverName(this.receivedData.leaverName));
       }
 
       if (
@@ -96,10 +106,10 @@ export class WSManager {
     }
   };
 
-  bindHandleSocketEventMessage = this.handleSocketEventMessage.bind(this);
+  private bindHandleSocketEventMessage =
+    this.handleSocketEventMessage.bind(this);
 
-  handleSocketEventClose = (event: CloseEvent) => {
-    console.log(`Closed ${event.code}`);
+  private handleSocketEventClose = () => {
     this.store.dispatch(closeConnection());
   };
 

@@ -1,8 +1,8 @@
 import React, { FC } from "react";
 import { useSelector } from "react-redux";
 import Board from "./Board/Board";
-import x from "./Board/Square/images/x.svg";
-import o from "./Board/Square/images/o.svg";
+import x from "./Square/images/x.svg";
+import o from "./Square/images/o.svg";
 import { selectUser } from "../../store/sliceUser";
 import { selectRoom } from "../../store/sliceRoom";
 import "./Game.css";

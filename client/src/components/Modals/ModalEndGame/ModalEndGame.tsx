@@ -1,10 +1,10 @@
 import React, { FC } from "react";
 import { useSelector } from "react-redux";
-import { selectEndGame } from "../../store/sliceEndGame";
+import { selectEndGame } from "../../../store/sliceEndGame";
 import "./ModalEndGame.css";
-import { selectRoom } from "../../store/sliceRoom";
-import Button from "../UI/Button/Button";
-import { selectUser } from "../../store/sliceUser";
+import { selectRoom } from "../../../store/sliceRoom";
+import Button from "../../UI/Button/Button";
+import { selectUser } from "../../../store/sliceUser";
 
 interface IProps {
   newGame: boolean;

@@ -14,8 +14,11 @@ import { selectUser } from "./store/sliceUser";
 import { IPlayer, selectRoom } from "./store/sliceRoom";
 import { selectRooms } from "./store/sliceRooms";
 import { selectEndGame } from "./store/sliceEndGame";
-import ModalEndGame from "./components/ModalEndGame/ModalEndGame";
+import ModalEndGame from "./components/Modals/ModalEndGame/ModalEndGame";
 import { selectOfferAndAgreement } from "./store/sliceOfferAndAgreement";
+import ModalPlayerHasLeftGame from "./components/Modals/ModalPlayerHasLeftGame/ModalPlayerHasLeftGame";
+import { selectLeaverName } from "./store/sliceLeaverName";
+import ModalServerWentDown from "./components/Modals/ModalServerWentDown/ModalServerWentDown";
 
 interface IState {
   start: boolean;
@@ -52,9 +55,10 @@ const App: FC = () => {
   const rooms = useSelector(selectRooms);
   const endGame = useSelector(selectEndGame);
   const offerAndAgreement = useSelector(selectOfferAndAgreement);
+  const leaverName = useSelector(selectLeaverName);
 
   const handleClickPlayer = () => {
-    if (!connection) {
+    if (!connection.state) {
       return;
     }
 
@@ -68,7 +72,7 @@ const App: FC = () => {
   };
 
   const handleClickObserver = () => {
-    if (!connection) {
+    if (!connection.state) {
       return;
     }
 
@@ -80,6 +84,10 @@ const App: FC = () => {
   };
 
   const handleChangeInput = (e: React.SyntheticEvent) => {
+    if (!connection.state) {
+      return;
+    }
+
     if (!(e.target as HTMLInputElement).value) {
       setState({ ...state, showRooms: false, showRoomSelection: false });
     } else {
@@ -90,6 +98,10 @@ const App: FC = () => {
   };
 
   const handleClickCreateRoom = () => {
+    if (!connection.state) {
+      return;
+    }
+
     setState({
       ...state,
       showRoomSelection: false,
@@ -100,6 +112,10 @@ const App: FC = () => {
   };
 
   const handleClickChooseRoom = () => {
+    if (!connection.state) {
+      return;
+    }
+
     if (!state.showRooms) {
       setState({ ...state, showInput: false, showRooms: true });
       socketManager.send({ getAllRooms: false });
@@ -107,7 +123,7 @@ const App: FC = () => {
   };
 
   const handleClickRoom = (id: string) => {
-    if (!connection) {
+    if (!connection.state) {
       return;
     }
 
@@ -116,10 +132,9 @@ const App: FC = () => {
   };
 
   const handleClickSquare = (index: number) => {
-    if (!connection) {
+    if (!connection.state) {
       return;
     }
-
     if (endGame.mix) {
       return;
     }
@@ -152,6 +167,9 @@ const App: FC = () => {
   };
 
   const handleClickNewGame = () => {
+    if (!connection.state) {
+      return;
+    }
     setState({ ...state, newGame: true, start: false });
 
     const passiveUserId = room.players?.filter((item) => item.id !== user.id)[0]
@@ -167,6 +185,9 @@ const App: FC = () => {
   };
 
   const handleClickOffer = () => {
+    if (!connection.state) {
+      return;
+    }
     setState({ ...state, newGame: true, start: false });
 
     const passiveUserId = room.players?.filter((item) => item.id !== user.id)[0]
@@ -247,13 +268,19 @@ const App: FC = () => {
         <Message status={status} roomId={room.roomId ?? ""} />
       )}
       {state.start && <Game onClickSquare={handleClickSquare} />}
-      {state.endGame && (
+      {!leaverName && connection.state && state.endGame && (
         <ModalEndGame
           newGame={state.newGame}
           onClickNewGame={handleClickNewGame}
           onClickOffer={handleClickOffer}
           offer={offerAndAgreement.offer}
         />
+      )}
+      {leaverName && connection.state && (
+        <ModalPlayerHasLeftGame leaverName={leaverName} />
+      )}
+      {!connection.state && connection.message === "Server went down!" && (
+        <ModalServerWentDown />
       )}
     </div>
   );

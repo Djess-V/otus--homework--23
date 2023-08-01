@@ -83,6 +83,9 @@ const usersSlice = createSlice({
 export const selectUserById = (state: RootState, id: string) =>
   state.users.find((user) => user.id === id);
 
+export const selectUserByWS = (state: RootState, ws: WebSocket) =>
+  state.users.find((user) => user.ws === ws);
+
 export const selectUsersByIds = (
   state: RootState,
   players: IPlayer[],
