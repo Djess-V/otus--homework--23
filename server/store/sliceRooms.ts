@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { v4 } from "uuid";
 import { RootState } from "./store";
 import { IUser } from "./sliceUsers";
 
@@ -36,6 +37,8 @@ interface IRoom {
   observerIds: string[];
   field: IField;
   available: boolean;
+  availableForTwoPlayers: boolean;
+  roomCreator: string;
 }
 
 export const createPlayer = (user: IUser): IPlayer => ({
@@ -44,15 +47,22 @@ export const createPlayer = (user: IUser): IPlayer => ({
   active: user.active,
 });
 
-export const createRoom = (roomId: string): IRoom => ({
-  roomId,
+export const createRoom = (
+  userId: string,
+  availableForTwoPlayers: boolean = false,
+): IRoom => ({
+  roomId: v4(),
   players: [],
   observerIds: [],
   field: [...initialField],
   available: true,
+  availableForTwoPlayers,
+  roomCreator: userId,
 });
 
-const initialState: IRoom[] = [];
+type State = IRoom[];
+
+const initialState: State = [];
 
 const roomsSlice = createSlice({
   name: "rooms",
@@ -66,7 +76,9 @@ const roomsSlice = createSlice({
     addPlayerToTheRoom: (state, action: PayloadAction<IPayloadAddPlayer>) => {
       const room = state.find((item) => item.roomId === action.payload.roomId);
 
-      room?.players.push(action.payload.player);
+      if (room) {
+        room.players.push(action.payload.player);
+      }
 
       return state;
     },
@@ -77,68 +89,93 @@ const roomsSlice = createSlice({
     ) => {
       const room = state.find((item) => item.roomId === action.payload.roomId);
 
-      room?.observerIds.push(action.payload.observerId);
+      if (room) {
+        room.observerIds.push(action.payload.observerId);
+      }
 
       return state;
     },
 
     updatePlayersActive: (state, action: PayloadAction<string>) => {
-      const room = state.find(
-        (item) => item.roomId === action.payload,
-      ) as IRoom;
+      const room = state.find((item) => item.roomId === action.payload);
 
-      for (const player of room.players) {
-        player.active = !player.active;
+      if (room) {
+        for (const player of room.players) {
+          player.active = !player.active;
+        }
       }
 
       return state;
     },
 
     updateFirstPlayerActive: (state, action: PayloadAction<string>) => {
-      const room = state.find(
-        (item) => item.roomId === action.payload,
-      ) as IRoom;
+      const room = state.find((item) => item.roomId === action.payload);
 
-      room.players[0].active = !room.players[0].active;
+      if (room) {
+        room.players[0].active = !room.players[0].active;
+      }
 
       return state;
     },
 
     updateField: (state, action: PayloadAction<IPayloadUpdateField>) => {
-      const room = state.find(
-        (item) => item.roomId === action.payload.roomId,
-      ) as IRoom;
+      const room = state.find((item) => item.roomId === action.payload.roomId);
 
-      room.field[action.payload.index] = action.payload.value;
+      if (room) {
+        room.field[action.payload.index] = action.payload.value;
+      }
 
       return state;
     },
 
     unlockRoom: (state, action: PayloadAction<string>) => {
-      const room = state.find(
-        (item) => item.roomId === action.payload,
-      ) as IRoom;
+      const room = state.find((item) => item.roomId === action.payload);
 
-      room.available = false;
+      if (room) {
+        room.available = false;
+      }
 
       return state;
     },
   },
 });
 
-export const selectRoom = (state: RootState, roomId: string): IRoom =>
-  state.rooms.find((item) => item.roomId === roomId) as IRoom;
+export const selectRoom = (state: RootState, roomId: string) =>
+  state.rooms.find((item) => item.roomId === roomId);
 
-export const selectAllRoomsIds = (state: RootState): string[] =>
+export const selectAllRoomsIds = (state: RootState) =>
   state.rooms.filter((item) => item.available).map((item) => item.roomId);
 
-export const selectAvailableRoomsIds = (state: RootState): string[] =>
+export const selectAvailableRoomsIds = (state: RootState) =>
   state.rooms
-    .filter((item) => item.available && item.players.length === 1)
+    .filter(
+      (item) =>
+        item.available &&
+        !item.availableForTwoPlayers &&
+        item.players.length === 1,
+    )
     .map((item) => item.roomId);
 
-export const selectFieldByRoomId = (state: RootState, roomId: string): IField =>
-  (state.rooms.find((item) => item.roomId === roomId) as IRoom).field;
+export const selectFieldByRoomId = (state: RootState, roomId: string) => {
+  const room = state.rooms.find((item) => item.roomId === roomId);
+
+  if (room) {
+    return room.field;
+  }
+
+  return room;
+};
+
+export const selectAvailableRoomByCreatorWithoutTwoPlayers = (
+  state: RootState,
+  userId: string,
+) =>
+  state.rooms.find(
+    (item) =>
+      item.roomCreator === userId &&
+      item.available &&
+      item.availableForTwoPlayers,
+  );
 
 export const {
   addRoom,

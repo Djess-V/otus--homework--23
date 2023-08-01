@@ -1,4 +1,3 @@
-import { v4 } from "uuid";
 import WebSocket from "ws";
 import store from "./store/store";
 import {
@@ -6,7 +5,10 @@ import {
   createUser,
   selectUserById,
   selectUsersByIds,
-  updataUserActive,
+  toggleUserActive,
+  updataUserRoomId,
+  updateUserActiveToFalse,
+  updateUserActiveToTrue,
 } from "./store/sliceUsers";
 import {
   addObserverToTheRoom,
@@ -15,6 +17,7 @@ import {
   createPlayer,
   createRoom,
   selectAllRoomsIds,
+  selectAvailableRoomByCreatorWithoutTwoPlayers,
   selectAvailableRoomsIds,
   selectFieldByRoomId,
   selectRoom,
@@ -35,68 +38,145 @@ interface IReceivedData {
   value?: 1 | 2;
   activeUserId?: string;
   passiveUserId?: string;
+  newGame?: boolean;
+  roomCreator?: string;
+  agreement?: boolean;
 }
 
 export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
-  if (typeof message !== "string") {
-    return;
-  }
-
-  const data: IReceivedData = JSON.parse(message);
-
-  if ("getAllRooms" in data) {
-    if (data.getAllRooms) {
-      ws.send(JSON.stringify({ rooms: selectAllRoomsIds(store.getState()) }));
-    } else {
-      ws.send(
-        JSON.stringify({ rooms: selectAvailableRoomsIds(store.getState()) }),
+  try {
+    if (typeof message !== "string") {
+      throw new Error(
+        "Error receiving data in dispatchEvent! Data is not a string!",
       );
     }
-  } else if (data.status === "player") {
-    if ("createRoom" in data) {
-      const roomId = v4();
 
-      const user = createUser(data.status, data.name!, ws, roomId);
+    const data: IReceivedData = JSON.parse(message);
 
-      store.dispatch(addUser(user));
+    if ("getAllRooms" in data) {
+      if (data.getAllRooms) {
+        ws.send(JSON.stringify({ rooms: selectAllRoomsIds(store.getState()) }));
+      } else {
+        ws.send(
+          JSON.stringify({ rooms: selectAvailableRoomsIds(store.getState()) }),
+        );
+      }
+    } else if (data.status === "player") {
+      if ("createRoom" in data) {
+        const user = createUser(data.status, data.name!, ws);
 
-      let room = createRoom(roomId);
+        store.dispatch(addUser(user));
 
-      store.dispatch(addRoom(room));
+        const room = createRoom(user.id);
 
-      const player = createPlayer(user);
+        store.dispatch(addRoom(room));
 
-      store.dispatch(addPlayerToTheRoom({ roomId, player }));
+        store.dispatch(
+          updataUserRoomId({ userId: user.id, roomId: room.roomId }),
+        );
 
-      room = selectRoom(store.getState(), roomId);
+        const player = createPlayer(user);
 
-      const userToSend = transformUserToSend(user);
+        store.dispatch(addPlayerToTheRoom({ roomId: room.roomId, player }));
 
-      ws.send(JSON.stringify({ user: userToSend, room }));
-    } else {
-      const user = createUser(data.status, data.name!, ws, data.roomId!);
+        const currentRoom = selectRoom(store.getState(), room.roomId);
 
-      store.dispatch(addUser(user));
+        if (!currentRoom) {
+          throw new Error("No room found when creating the first user!");
+        }
 
-      const player = createPlayer(user);
+        const userToSend = transformUserToSend(user);
 
-      store.dispatch(addPlayerToTheRoom({ roomId: data.roomId!, player }));
+        ws.send(JSON.stringify({ user: userToSend, room: currentRoom }));
+      } else {
+        const user = createUser(data.status, data.name!, ws);
 
-      let room = selectRoom(store.getState(), data.roomId!);
+        store.dispatch(addUser(user));
 
-      store.dispatch(updataUserActive(room.players[0].id));
+        store.dispatch(
+          updataUserRoomId({ userId: user.id, roomId: data.roomId! }),
+        );
 
-      const firstUser = selectUserById(store.getState(), room.players[0].id);
+        const player = createPlayer(user);
 
-      store.dispatch(updateFirstPlayerActive(data.roomId!));
+        store.dispatch(addPlayerToTheRoom({ roomId: data.roomId!, player }));
 
-      room = selectRoom(store.getState(), data.roomId!);
+        const roomBeforeUpdateActive = selectRoom(
+          store.getState(),
+          data.roomId!,
+        );
 
-      const firstUserToSend = transformUserToSend(firstUser);
+        if (!roomBeforeUpdateActive) {
+          throw new Error(
+            "When creating a second user, no room is found before updating the active field!",
+          );
+        }
 
-      firstUser.ws.send(JSON.stringify({ user: firstUserToSend }));
+        store.dispatch(toggleUserActive(roomBeforeUpdateActive.players[0].id));
 
-      const userToSend = transformUserToSend(user);
+        const firstUser = selectUserById(
+          store.getState(),
+          roomBeforeUpdateActive.players[0].id,
+        );
+
+        if (!firstUser) {
+          throw new Error("First user not found!");
+        }
+
+        store.dispatch(updateFirstPlayerActive(data.roomId!));
+
+        const roomAfterUpdateActive = selectRoom(
+          store.getState(),
+          data.roomId!,
+        );
+
+        if (!roomAfterUpdateActive) {
+          throw new Error(
+            "When creating a second user, room not found after updating active field!",
+          );
+        }
+
+        const firstUserToSend = transformUserToSend(firstUser);
+
+        firstUser.ws.send(JSON.stringify({ user: firstUserToSend }));
+
+        const userToSend = transformUserToSend(user);
+
+        const members = selectUsersByIds(
+          store.getState(),
+          roomAfterUpdateActive.players,
+          roomAfterUpdateActive.observerIds,
+        );
+
+        for (const member of members) {
+          if (member.id === player.id) {
+            member.ws.send(
+              JSON.stringify({ user: userToSend, room: roomAfterUpdateActive }),
+            );
+          } else {
+            member.ws.send(JSON.stringify({ room: roomAfterUpdateActive }));
+          }
+        }
+      }
+    } else if (data.status === "observer") {
+      const observer = createUser(data.status, "observer", ws);
+      store.dispatch(addUser(observer));
+
+      store.dispatch(
+        updataUserRoomId({ userId: observer.id, roomId: data.roomId! }),
+      );
+
+      store.dispatch(
+        addObserverToTheRoom({ roomId: data.roomId!, observerId: observer.id }),
+      );
+
+      const room = selectRoom(store.getState(), data.roomId!);
+
+      if (!room) {
+        throw new Error("No room found when creating an observer!");
+      }
+
+      const userToSend = transformUserToSend(observer);
 
       const members = selectUsersByIds(
         store.getState(),
@@ -105,54 +185,108 @@ export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
       );
 
       for (const member of members) {
-        if (member.id === player.id) {
+        if (member.id === observer.id) {
           member.ws.send(JSON.stringify({ user: userToSend, room }));
         } else {
           member.ws.send(JSON.stringify({ room }));
         }
       }
-    }
-  } else if (data.status === "observer") {
-    const observer = createUser(data.status, "observer", ws, data.roomId!);
-    store.dispatch(addUser(observer));
-    store.dispatch(
-      addObserverToTheRoom({ roomId: data.roomId!, observerId: observer.id }),
-    );
+    } else if ("index" in data) {
+      store.dispatch(
+        updateField({
+          index: data.index!,
+          value: data.value!,
+          roomId: data.roomId!,
+        }),
+      );
 
-    const room = selectRoom(store.getState(), data.roomId!);
+      const field = selectFieldByRoomId(store.getState(), data.roomId!);
 
-    const userToSend = transformUserToSend(observer);
-
-    const members = selectUsersByIds(
-      store.getState(),
-      room.players,
-      room.observerIds,
-    );
-
-    for (const member of members) {
-      if (member.id === observer.id) {
-        member.ws.send(JSON.stringify({ user: userToSend, room }));
-      } else {
-        member.ws.send(JSON.stringify({ room }));
+      if (!field) {
+        throw new Error("Field not found!");
       }
-    }
-  } else if ("index" in data) {
-    store.dispatch(
-      updateField({
-        index: data.index!,
-        value: data.value!,
-        roomId: data.roomId!,
-      }),
-    );
 
-    const winTest = calculateWinner(
-      selectFieldByRoomId(store.getState(), data.roomId!),
-    );
+      const winTest = calculateWinner(field);
 
-    if (winTest) {
-      store.dispatch(unlockRoom(data.roomId!));
+      if (winTest) {
+        store.dispatch(unlockRoom(data.roomId!));
 
-      const room = selectRoom(store.getState(), data.roomId!);
+        const room = selectRoom(store.getState(), data.roomId!);
+
+        if (!room) {
+          throw new Error("No room found when winning!");
+        }
+
+        const members = selectUsersByIds(
+          store.getState(),
+          room.players,
+          room.observerIds,
+        );
+
+        for (const member of members) {
+          member.ws.send(
+            JSON.stringify({
+              endGame: { winner: data.activeUserId!, mix: winTest },
+              room,
+            }),
+          );
+        }
+
+        return;
+      }
+
+      let room = selectRoom(store.getState(), data.roomId!);
+
+      if (!room) {
+        throw new Error("Room before changing active players not found!");
+      }
+
+      if (!room.field.includes(0)) {
+        store.dispatch(unlockRoom(data.roomId!));
+
+        const members = selectUsersByIds(
+          store.getState(),
+          room.players,
+          room.observerIds,
+        );
+
+        for (const member of members) {
+          member.ws.send(
+            JSON.stringify({
+              endGame: { winner: "", mix: [] },
+              room,
+            }),
+          );
+        }
+      }
+
+      store.dispatch(toggleUserActive(data.activeUserId!));
+
+      store.dispatch(toggleUserActive(data.passiveUserId!));
+
+      store.dispatch(updatePlayersActive(data.roomId!));
+
+      room = selectRoom(store.getState(), data.roomId!);
+
+      if (!room) {
+        throw new Error("Room not found after changing active players!");
+      }
+
+      const activeUser = selectUserById(store.getState(), data.activeUserId!);
+
+      if (!activeUser) {
+        throw new Error("Active user not found!");
+      }
+
+      const passiveUser = selectUserById(store.getState(), data.passiveUserId!);
+
+      if (!passiveUser) {
+        throw new Error("Passive user not found!");
+      }
+
+      const activeUserToSend = transformUserToSend(activeUser);
+
+      const passiveUserToSend = transformUserToSend(passiveUser);
 
       const members = selectUsersByIds(
         store.getState(),
@@ -161,68 +295,204 @@ export const dispatchEvent = (message: WebSocket.Data, ws: WebSocket) => {
       );
 
       for (const member of members) {
-        member.ws.send(
-          JSON.stringify({
-            endGame: { winner: data.activeUserId!, mix: winTest },
-            room,
-          }),
-        );
+        if (member.id === data.activeUserId) {
+          member.ws.send(JSON.stringify({ user: activeUserToSend, room }));
+        } else if (member.id === data.passiveUserId) {
+          member.ws.send(JSON.stringify({ user: passiveUserToSend, room }));
+        } else {
+          member.ws.send(JSON.stringify({ room }));
+        }
+      }
+    } else if ("newGame" in data) {
+      const room = selectAvailableRoomByCreatorWithoutTwoPlayers(
+        store.getState(),
+        data.passiveUserId!,
+      );
+
+      if (room) {
+        return;
       }
 
-      return;
-    }
+      const newRoom = createRoom(data.activeUserId!, true);
 
-    if (!selectRoom(store.getState(), data.roomId!).field.includes(0)) {
-      store.dispatch(unlockRoom(data.roomId!));
+      store.dispatch(addRoom(newRoom));
 
-      const room = selectRoom(store.getState(), data.roomId!);
+      if (data.roomCreator === data.activeUserId) {
+        store.dispatch(updateUserActiveToFalse(data.activeUserId!));
+      } else {
+        store.dispatch(updateUserActiveToTrue(data.activeUserId!));
+      }
+
+      store.dispatch(
+        updataUserRoomId({
+          userId: data.activeUserId!,
+          roomId: newRoom.roomId,
+        }),
+      );
+
+      const user = selectUserById(store.getState(), data.activeUserId!);
+
+      if (!user) {
+        throw new Error("First user not found when creating a replay!");
+      }
+
+      const player = createPlayer(user);
+
+      store.dispatch(addPlayerToTheRoom({ roomId: newRoom.roomId, player }));
+
+      const userToSend = transformUserToSend(user);
+
+      const prevRoom = selectRoom(store.getState(), data.roomId!);
+
+      if (!prevRoom) {
+        throw new Error(
+          "When creating a repeated game, the previous room is not found!",
+        );
+      }
 
       const members = selectUsersByIds(
         store.getState(),
-        room.players,
-        room.observerIds,
+        prevRoom.players,
+        prevRoom.observerIds,
       );
 
       for (const member of members) {
-        member.ws.send(
-          JSON.stringify({
-            endGame: { winner: "", mix: [] },
-            room,
+        if (member.id === data.activeUserId) {
+          member.ws.send(
+            JSON.stringify({
+              user: userToSend,
+              agreement: false,
+            }),
+          );
+        } else if (member.id === data.passiveUserId) {
+          member.ws.send(JSON.stringify({ offer: true, agreement: false }));
+        } else {
+          member.ws.send(JSON.stringify({ agreement: false }));
+        }
+      }
+    } else if ("agreement" in data) {
+      const firstUser = selectUserById(store.getState(), data.passiveUserId!);
+
+      if (!firstUser) {
+        throw new Error(
+          "The first player is not found when processing consent!",
+        );
+      }
+
+      const roomBeforeUpdateObservers = selectRoom(
+        store.getState(),
+        firstUser.roomId,
+      );
+
+      if (!roomBeforeUpdateObservers) {
+        throw new Error("No room found before observers update by agreement!");
+      }
+
+      if (data.roomCreator === data.activeUserId) {
+        store.dispatch(updateUserActiveToFalse(data.activeUserId!));
+      } else {
+        store.dispatch(updateUserActiveToTrue(data.activeUserId!));
+      }
+
+      const user = selectUserById(store.getState(), data.activeUserId!);
+
+      if (!user) {
+        throw new Error("Second user not found when creating a replay!");
+      }
+
+      const player = createPlayer(user);
+
+      store.dispatch(
+        addPlayerToTheRoom({
+          roomId: roomBeforeUpdateObservers.roomId,
+          player,
+        }),
+      );
+
+      const userToSend = transformUserToSend(user);
+
+      const prevRoom = selectRoom(store.getState(), data.roomId!);
+
+      if (!prevRoom) {
+        throw new Error(
+          "When creating a repeated game, the previous room is not found!",
+        );
+      }
+
+      for (const observerId of prevRoom.observerIds) {
+        store.dispatch(
+          updataUserRoomId({
+            userId: observerId,
+            roomId: roomBeforeUpdateObservers.roomId,
+          }),
+        );
+
+        store.dispatch(
+          addObserverToTheRoom({
+            roomId: roomBeforeUpdateObservers.roomId,
+            observerId,
           }),
         );
       }
-    }
 
-    store.dispatch(updataUserActive(data.activeUserId!));
+      const roomAfterUpdateObservers = selectRoom(
+        store.getState(),
+        roomBeforeUpdateObservers.roomId,
+      );
 
-    store.dispatch(updataUserActive(data.passiveUserId!));
+      if (!roomAfterUpdateObservers) {
+        throw new Error("No room found before observers update!");
+      }
 
-    store.dispatch(updatePlayersActive(data.roomId!));
+      const members = selectUsersByIds(
+        store.getState(),
+        roomAfterUpdateObservers.players,
+        roomAfterUpdateObservers.observerIds,
+      );
 
-    const activeUser = selectUserById(store.getState(), data.activeUserId!);
+      const endGame = {};
 
-    const passiveUser = selectUserById(store.getState(), data.passiveUserId!);
+      for (const member of members) {
+        if (member.id === data.activeUserId) {
+          member.ws.send(
+            JSON.stringify({
+              user: userToSend,
+              room: roomAfterUpdateObservers,
+              agreement: true,
+              offer: false,
+              endGame,
+            }),
+          );
+        } else if (member.id === data.passiveUserId) {
+          member.ws.send(
+            JSON.stringify({
+              room: roomAfterUpdateObservers,
+              agreement: true,
+              endGame,
+            }),
+          );
+        } else {
+          const observer = selectUserById(store.getState(), member.id);
 
-    const activeUserToSend = transformUserToSend(activeUser);
+          if (!observer) {
+            throw new Error(
+              `Observer with id: ${member.id} not found when creating a replay!`,
+            );
+          }
+          const observerToSend = transformUserToSend(observer);
 
-    const passiveUserToSend = transformUserToSend(passiveUser);
-
-    const room = selectRoom(store.getState(), data.roomId!);
-
-    const members = selectUsersByIds(
-      store.getState(),
-      room.players,
-      room.observerIds,
-    );
-
-    for (const member of members) {
-      if (member.id === data.activeUserId) {
-        member.ws.send(JSON.stringify({ user: activeUserToSend, room }));
-      } else if (member.id === data.passiveUserId) {
-        member.ws.send(JSON.stringify({ user: passiveUserToSend, room }));
-      } else {
-        member.ws.send(JSON.stringify({ room }));
+          member.ws.send(
+            JSON.stringify({
+              user: observerToSend,
+              room: roomAfterUpdateObservers,
+              agreement: true,
+              endGame,
+            }),
+          );
+        }
       }
     }
+  } catch (error) {
+    console.log((error as unknown as Error).message);
   }
 };

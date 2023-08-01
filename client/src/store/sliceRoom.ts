@@ -16,6 +16,7 @@ export interface IRoom {
   players: IPlayer[];
   observerIds: string[];
   field: IField;
+  roomCreator: string;
 }
 
 const initialState: Partial<IRoom> = {};

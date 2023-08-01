@@ -48,6 +48,7 @@ module.exports = {
     "no-restricted-syntax": "off",
     "no-console": "off",
     "no-await-in-loop": "off",
+    "no-nested-ternary": "off",
     "prefer-destructuring": ["error", { object: true, array: false }],
     "max-classes-per-file": ["error", { ignoreExpressions: true, max: 2 }],
   },

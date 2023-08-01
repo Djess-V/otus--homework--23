@@ -17,9 +17,6 @@ const Game: FC<IProps> = ({ onClickSquare }) => {
 
   return (
     <div className="game">
-      <p className="game__number-of-observers">
-        Number of observers - {room.observerIds ? room.observerIds.length : 0}.
-      </p>
       <div className="game__players">
         <p
           className={`game__players_player ${
@@ -53,10 +50,7 @@ const Game: FC<IProps> = ({ onClickSquare }) => {
         </p>
       </div>
       <div className="game__board board-game">
-        <Board
-          squares={room.field ? room.field : []}
-          onClickSquare={onClickSquare}
-        />
+        <Board squares={room.field ?? []} onClickSquare={onClickSquare} />
       </div>
     </div>
   );

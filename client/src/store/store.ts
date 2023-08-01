@@ -4,6 +4,7 @@ import userReducer from "./sliceUser";
 import roomsReducer from "./sliceRooms";
 import roomReducer from "./sliceRoom";
 import endGameReducer from "./sliceEndGame";
+import offerAndAgreementReducer from "./sliceOfferAndAgreement";
 
 const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
     rooms: roomsReducer,
     room: roomReducer,
     endGame: endGameReducer,
+    offerAndAgreement: offerAndAgreementReducer,
   },
 });
 

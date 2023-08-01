@@ -15,9 +15,11 @@ import { IPlayer, selectRoom } from "./store/sliceRoom";
 import { selectRooms } from "./store/sliceRooms";
 import { selectEndGame } from "./store/sliceEndGame";
 import ModalEndGame from "./components/ModalEndGame/ModalEndGame";
+import { selectOfferAndAgreement } from "./store/sliceOfferAndAgreement";
 
 interface IState {
   start: boolean;
+  newGame: boolean;
   showStatusSelection: boolean;
   showRoomSelection: boolean;
   showRooms: boolean;
@@ -28,6 +30,7 @@ interface IState {
 
 const initState: IState = {
   start: false,
+  newGame: false,
   showStatusSelection: true,
   showRoomSelection: false,
   showRooms: false,
@@ -48,6 +51,7 @@ const App: FC = () => {
   const room = useSelector(selectRoom);
   const rooms = useSelector(selectRooms);
   const endGame = useSelector(selectEndGame);
+  const offerAndAgreement = useSelector(selectOfferAndAgreement);
 
   const handleClickPlayer = () => {
     if (!connection) {
@@ -138,13 +142,43 @@ const App: FC = () => {
       ).id;
 
       socketManager.send({
-        roomId: room.roomId ? room.roomId : "",
-        activeUserId: user.id ? user.id : "",
+        roomId: room.roomId,
+        activeUserId: user.id,
         passiveUserId,
         index,
         value: room.players[0].active ? 1 : 2,
       });
     }
+  };
+
+  const handleClickNewGame = () => {
+    setState({ ...state, newGame: true, start: false });
+
+    const passiveUserId = room.players?.filter((item) => item.id !== user.id)[0]
+      .id;
+
+    socketManager.send({
+      newGame: true,
+      activeUserId: user.id,
+      passiveUserId,
+      roomCreator: room.roomCreator,
+      roomId: room.roomId,
+    });
+  };
+
+  const handleClickOffer = () => {
+    setState({ ...state, newGame: true, start: false });
+
+    const passiveUserId = room.players?.filter((item) => item.id !== user.id)[0]
+      .id;
+
+    socketManager.send({
+      agreement: true,
+      activeUserId: user.id,
+      passiveUserId,
+      roomCreator: room.roomCreator,
+      roomId: room.roomId,
+    });
   };
 
   useEffect(() => {
@@ -168,6 +202,18 @@ const App: FC = () => {
       setState({ ...state, endGame: true });
     }
   }, [endGame]);
+
+  useEffect(() => {
+    if (offerAndAgreement.agreement) {
+      setState({
+        ...state,
+        endGame: false,
+        showMessage: false,
+        start: true,
+        newGame: false,
+      });
+    }
+  }, [offerAndAgreement]);
 
   return (
     <div className="_container">
@@ -198,10 +244,17 @@ const App: FC = () => {
         <Rooms status={status} rooms={rooms} onClickRoom={handleClickRoom} />
       )}
       {state.showMessage && (
-        <Message status={status} roomId={room.roomId ? room.roomId : ""} />
+        <Message status={status} roomId={room.roomId ?? ""} />
       )}
       {state.start && <Game onClickSquare={handleClickSquare} />}
-      {state.endGame && <ModalEndGame />}
+      {state.endGame && (
+        <ModalEndGame
+          newGame={state.newGame}
+          onClickNewGame={handleClickNewGame}
+          onClickOffer={handleClickOffer}
+          offer={offerAndAgreement.offer}
+        />
+      )}
     </div>
   );
 };

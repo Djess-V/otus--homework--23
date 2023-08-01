@@ -17,13 +17,12 @@ export const createUser = (
   status: "player" | "observer",
   name: string,
   ws: WebSocket,
-  roomId: string,
 ): IUser => ({
   id: v4(),
   name,
   status,
   ws,
-  roomId,
+  roomId: "",
   active: false,
 });
 
@@ -37,10 +36,42 @@ const usersSlice = createSlice({
       state.push(action.payload);
       return state;
     },
-    updataUserActive: (state, action: PayloadAction<string>) => {
-      const user = state.find((item) => item.id === action.payload) as IUser;
+    toggleUserActive: (state, action: PayloadAction<string>) => {
+      const user = state.find((item) => item.id === action.payload);
 
-      user.active = !user.active;
+      if (user) {
+        user.active = !user.active;
+      }
+
+      return state;
+    },
+    updateUserActiveToFalse: (state, action: PayloadAction<string>) => {
+      const user = state.find((item) => item.id === action.payload);
+
+      if (user) {
+        user.active = false;
+      }
+
+      return state;
+    },
+    updateUserActiveToTrue: (state, action: PayloadAction<string>) => {
+      const user = state.find((item) => item.id === action.payload);
+
+      if (user) {
+        user.active = true;
+      }
+
+      return state;
+    },
+    updataUserRoomId: (
+      state,
+      action: PayloadAction<{ userId: string; roomId: string }>,
+    ) => {
+      const user = state.find((item) => item.id === action.payload.userId);
+
+      if (user) {
+        user.roomId = action.payload.roomId;
+      }
 
       return state;
     },
@@ -50,30 +81,41 @@ const usersSlice = createSlice({
 });
 
 export const selectUserById = (state: RootState, id: string) =>
-  state.users.find((user) => user.id === id) as IUser;
+  state.users.find((user) => user.id === id);
 
 export const selectUsersByIds = (
   state: RootState,
   players: IPlayer[],
   observerIds: string[],
-): IUser[] => {
+) => {
   const users = [];
 
   for (const { id } of players) {
-    const user = state.users.find((item) => item.id === id) as IUser;
+    const user = state.users.find((item) => item.id === id);
 
-    users.push(user);
+    if (user) {
+      users.push(user);
+    }
   }
 
   for (const id of observerIds) {
-    const user = state.users.find((item) => item.id === id) as IUser;
+    const user = state.users.find((item) => item.id === id);
 
-    users.push(user);
+    if (user) {
+      users.push(user);
+    }
   }
 
   return users;
 };
 
-export const { addUser, removeUser, updataUserActive } = usersSlice.actions;
+export const {
+  addUser,
+  removeUser,
+  toggleUserActive,
+  updataUserRoomId,
+  updateUserActiveToFalse,
+  updateUserActiveToTrue,
+} = usersSlice.actions;
 
 export default usersSlice.reducer;
