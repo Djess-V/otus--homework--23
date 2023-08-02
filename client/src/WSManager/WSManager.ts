@@ -29,11 +29,10 @@ interface ISentData {
   activeUserId?: string;
   passiveUserId?: string;
   newGame?: boolean;
-  roomCreator?: string;
   agreement?: boolean;
 }
 
-export class WSManager {
+export default class WSManager {
   private socket: WebSocket;
 
   private store: Store;

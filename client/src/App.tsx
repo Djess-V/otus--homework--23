@@ -1,14 +1,13 @@
 import React, { FC, useState, useEffect } from "react";
-import { useSelector } from "react-redux/es/exports";
+import { useSelector } from "react-redux";
 import Title from "./components/Title/Title";
 import StatusSelection from "./components/StatusSelection/StatusSelection";
-import "./App.css";
 import Rooms from "./components/Rooms/Rooms";
 import RoomSelectionMenu from "./components/RoomSelectionMenu/RoomSelectionMenu";
 import Input from "./components/UI/Input/Input";
 import Message from "./components/Message/Message";
 import Game from "./components/Game/Game";
-import { socketManager } from ".";
+import { socketManager } from "./WSManager/socketManager";
 import { selectConnection } from "./store/sliceConnection";
 import { selectUser } from "./store/sliceUser";
 import { IPlayer, selectRoom } from "./store/sliceRoom";
@@ -19,6 +18,7 @@ import { selectOfferAndAgreement } from "./store/sliceOfferAndAgreement";
 import ModalPlayerHasLeftGame from "./components/Modals/ModalPlayerHasLeftGame/ModalPlayerHasLeftGame";
 import { selectLeaverName } from "./store/sliceLeaverName";
 import ModalServerWentDown from "./components/Modals/ModalServerWentDown/ModalServerWentDown";
+import "./App.css";
 
 interface IState {
   start: boolean;
@@ -179,7 +179,6 @@ const App: FC = () => {
       newGame: true,
       activeUserId: user.id,
       passiveUserId,
-      roomCreator: room.roomCreator,
       roomId: room.roomId,
     });
   };

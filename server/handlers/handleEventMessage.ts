@@ -317,11 +317,7 @@ export const handleEventMessage = (message: WebSocket.Data, ws: WebSocket) => {
 
       store.dispatch(addRoom(newRoom));
 
-      if (data.roomCreator === data.activeUserId) {
-        store.dispatch(updateUserActiveToFalse(data.activeUserId!));
-      } else {
-        store.dispatch(updateUserActiveToTrue(data.activeUserId!));
-      }
+      store.dispatch(updateUserActiveToTrue(data.activeUserId!));
 
       store.dispatch(
         updataUserRoomId({
@@ -388,11 +384,7 @@ export const handleEventMessage = (message: WebSocket.Data, ws: WebSocket) => {
         throw new Error("No room found before observers update by agreement!");
       }
 
-      if (data.roomCreator === data.activeUserId) {
-        store.dispatch(updateUserActiveToFalse(data.activeUserId!));
-      } else {
-        store.dispatch(updateUserActiveToTrue(data.activeUserId!));
-      }
+      store.dispatch(updateUserActiveToFalse(data.activeUserId!));
 
       const user = selectUserById(store.getState(), data.activeUserId!);
 

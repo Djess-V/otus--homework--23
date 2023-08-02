@@ -77,8 +77,8 @@ const ModalEndGame: FC<IProps> = ({
                     )}
                     <div className="modal-content__footer">
                       <span className="modal-content__footer_note">Note: </span>
-                      In a new game, the player who was second in the current
-                      game has the right of first move
+                      In a new game, the player who initialised the creation of
+                      the new game will have the right of first turn!
                     </div>
                   </>
                 )}

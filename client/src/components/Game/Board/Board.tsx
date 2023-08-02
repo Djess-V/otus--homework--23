@@ -2,8 +2,8 @@ import React, { FC } from "react";
 import { useSelector } from "react-redux";
 import { v4 } from "uuid";
 import Square from "../Square/Square";
-import "./Board.css";
 import { selectEndGame } from "../../../store/sliceEndGame";
+import "./Board.css";
 
 interface IProps {
   squares: number[];

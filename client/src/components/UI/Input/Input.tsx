@@ -24,6 +24,7 @@ const Input: FC<IProps> = ({
 
   return (
     <input
+      data-testid="input"
       type={type}
       className={`_input ${modify ? `input_${modify}` : modify}`}
       required={requared}

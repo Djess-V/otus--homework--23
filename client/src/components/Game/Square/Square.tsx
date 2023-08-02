@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import "./Square.css";
 import x from "./images/x.svg";
 import o from "./images/o.svg";
+import "./Square.css";
 
 interface IProps {
   index: number;

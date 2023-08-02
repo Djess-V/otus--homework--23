@@ -44,6 +44,7 @@ module.exports = {
     ],
     "@typescript-eslint/no-var-requires": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
     "no-param-reassign": "off",
     "no-restricted-syntax": "off",
     "no-console": "off",

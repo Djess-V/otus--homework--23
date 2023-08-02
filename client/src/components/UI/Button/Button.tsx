@@ -7,6 +7,7 @@ interface IProps {
   onClick?: () => void;
   modify?: string;
   disabled?: boolean;
+  testId?: string;
 }
 
 const Button: FC<IProps> = ({
@@ -15,8 +16,10 @@ const Button: FC<IProps> = ({
   onClick = () => {},
   modify = "",
   disabled = false,
+  testId = "button",
 }) => (
   <button
+    data-testid={testId}
     className={`_button ${modify ? `btn_${modify}` : modify}`}
     type={type}
     onClick={onClick}
