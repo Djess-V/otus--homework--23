@@ -18,6 +18,7 @@ const Rooms: FC<IProps> = ({ status, rooms, onClickRoom }) => (
           className="rooms__list_item"
           key={id}
           onClick={() => onClickRoom(id)}
+          data-testid="room"
         >
           {id}
         </li>

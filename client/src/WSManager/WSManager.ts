@@ -51,16 +51,17 @@ export default class WSManager {
     this.socket.addEventListener("close", this.bindHandleSocketEventClose);
   }
 
-  private handleSocketEventOpen = () => {
-    console.log("Connection open!", this.store.getState());
+  static handleSocketEventOpen = () => {
+    console.log("Connection open!");
   };
 
-  private bindHandleSocketEventOpen = this.handleSocketEventOpen.bind(this);
+  private bindHandleSocketEventOpen =
+    WSManager.handleSocketEventOpen.bind(this);
 
   private handleSocketEventMessage = (event: MessageEvent) => {
     try {
       this.receivedData = JSON.parse(event.data);
-
+      console.log(event.data);
       if (this.receivedData.connectionMessage) {
         this.store.dispatch(
           openConnection(this.receivedData.connectionMessage),

@@ -4,7 +4,6 @@ import Title from "./components/Title/Title";
 import StatusSelection from "./components/StatusSelection/StatusSelection";
 import Rooms from "./components/Rooms/Rooms";
 import RoomSelectionMenu from "./components/RoomSelectionMenu/RoomSelectionMenu";
-import Input from "./components/UI/Input/Input";
 import Message from "./components/Message/Message";
 import Game from "./components/Game/Game";
 import { socketManager } from "./WSManager/socketManager";
@@ -196,7 +195,6 @@ const App: FC = () => {
       agreement: true,
       activeUserId: user.id,
       passiveUserId,
-      roomCreator: room.roomCreator,
       roomId: room.roomId,
     });
   };
@@ -245,13 +243,15 @@ const App: FC = () => {
         />
       )}
       {state.showInput && (
-        <Input
-          requared={true}
-          placeholder="Enter your name..."
-          name="name"
-          modify="name"
-          outValue={name}
-          outOnChange={handleChangeInput}
+        <input
+          data-testid="input"
+          type="text"
+          className="input-name"
+          required
+          maxLength={15}
+          placeholder="Enter you name..."
+          value={name}
+          onChange={handleChangeInput}
         />
       )}
       {state.showRoomSelection && (
