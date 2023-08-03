@@ -61,7 +61,7 @@ export default class WSManager {
   private handleSocketEventMessage = (event: MessageEvent) => {
     try {
       this.receivedData = JSON.parse(event.data);
-      console.log(event.data);
+
       if (this.receivedData.connectionMessage) {
         this.store.dispatch(
           openConnection(this.receivedData.connectionMessage),
