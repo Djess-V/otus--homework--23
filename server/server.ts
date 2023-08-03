@@ -5,6 +5,8 @@ import { handleEventMessage } from "./handlers/handleEventMessage";
 import { handleEventClose } from "./handlers/handleEventClose";
 import { handleEventOpen } from "./handlers/handleEventOpen";
 
+const port = process.env.PORT || 3001;
+
 const app = express();
 
 const server = http.createServer(app);
@@ -17,14 +19,11 @@ webSocketServer.on("connection", (ws) => {
     const message = isBinary ? m : m.toString();
     handleEventMessage(message, ws);
   });
-  ws.on("error", (e) => {
-    console.log(e);
-  });
   ws.on("close", () => {
     handleEventClose(ws);
   });
 });
 
-server.listen(3001, () => {
-  console.log(`Server start - http://localhost:3001`);
+server.listen(port, () => {
+  console.log(`Server start - http://31.129.97.32:${port}!`);
 });
