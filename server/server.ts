@@ -1,5 +1,6 @@
-import http from "http";
-import express from "express";
+import https from "https";
+import fs from "fs";
+import path from "path";
 import { WebSocketServer } from "ws";
 import { handleEventMessage } from "./handlers/handleEventMessage";
 import { handleEventClose } from "./handlers/handleEventClose";
@@ -7,9 +8,15 @@ import { handleEventOpen } from "./handlers/handleEventOpen";
 
 const port = process.env.PORT || 3001;
 
-const app = express();
+const keyPath = path.join(__dirname, "/keys/key.pem");
+const certPath = path.join(__dirname, "/keys/csr.pem");
 
-const server = http.createServer(app);
+const options = {
+  key: fs.readFileSync(keyPath),
+  cert: fs.readFileSync(certPath),
+};
+
+const server = https.createServer(options);
 
 const webSocketServer = new WebSocketServer({ server });
 
@@ -25,5 +32,5 @@ webSocketServer.on("connection", (ws) => {
 });
 
 server.listen(port, () => {
-  console.log(`Server start - http://31.129.97.32:${port}!`);
+  console.log(`Server start - https://31.129.97.32:${port}!`);
 });
