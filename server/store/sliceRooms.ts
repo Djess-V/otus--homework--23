@@ -137,6 +137,8 @@ const roomsSlice = createSlice({
 
       return state;
     },
+
+    removeRooms: () => [],
   },
 });
 
@@ -185,6 +187,7 @@ export const {
   updatePlayersActive,
   updateField,
   unlockRoom,
+  removeRooms,
 } = roomsSlice.actions;
 
 export default roomsSlice.reducer;

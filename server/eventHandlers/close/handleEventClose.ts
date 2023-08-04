@@ -1,7 +1,7 @@
 import WebSocket from "ws";
-import { selectUserByWS, selectUsersByIds } from "../store/sliceUsers";
-import store from "../store/store";
-import { selectRoom, unlockRoom } from "../store/sliceRooms";
+import { selectUserByWS, selectUsersByIds } from "../../store/sliceUsers";
+import store from "../../store/store";
+import { selectRoom, unlockRoom } from "../../store/sliceRooms";
 
 export const handleEventClose = (ws: WebSocket) => {
   try {
@@ -24,7 +24,7 @@ export const handleEventClose = (ws: WebSocket) => {
         "When closing WS connection on user's initiative - room not found!",
       );
     }
-
+    
     store.dispatch(unlockRoom(room.roomId));
 
     const members = selectUsersByIds(

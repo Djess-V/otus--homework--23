@@ -5,9 +5,9 @@ import fs from "fs";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { config } from "dotenv";
 import { WebSocketServer } from "ws";
-import { handleEventMessage } from "./handlers/handleEventMessage";
-import { handleEventClose } from "./handlers/handleEventClose";
-import { handleEventOpen } from "./handlers/handleEventOpen";
+import { handleEventMessage } from "./eventHandlers/message/handleEventMessage";
+import { handleEventClose } from "./eventHandlers/close/handleEventClose";
+import { handleEventOpen } from "./eventHandlers/open/handleEventOpen";
 
 config();
 
@@ -32,7 +32,7 @@ try {
       const message = isBinary ? m : m.toString();
       handleEventMessage(message, ws);
     });
-    ws.on("close", () => {
+    ws.on("close", () =>  {
       handleEventClose(ws);
     });
   });

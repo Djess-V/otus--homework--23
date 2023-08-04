@@ -77,6 +77,8 @@ const usersSlice = createSlice({
     },
     removeUser: (state, action: PayloadAction<string>) =>
       state.filter((client) => client.id !== action.payload),
+
+    removeUsers: () => [],
   },
 });
 
@@ -119,6 +121,7 @@ export const {
   updataUserRoomId,
   updateUserActiveToFalse,
   updateUserActiveToTrue,
+  removeUsers,
 } = usersSlice.actions;
 
 export default usersSlice.reducer;
