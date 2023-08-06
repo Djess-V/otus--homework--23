@@ -31,6 +31,8 @@ export const handleAgreement = (data: IReceivedData) => {
       throw new Error("Second user not found when creating a replay!");
     }
 
+    store.dispatch(updataUserRoomId({ userId: user.id, roomId: firstUser.roomId}));
+
     const player = createPlayer(user);
 
     store.dispatch(
