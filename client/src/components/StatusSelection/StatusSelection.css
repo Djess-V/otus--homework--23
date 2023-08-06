@@ -1,0 +1,22 @@
+.status-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
+}
+
+.status-selection__title {
+  text-align: center;
+}
+
+.status-selection__buttons {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: row;
+}
+
+.status-selection__buttons > button:first-child {
+  margin-right: 15px;
+}

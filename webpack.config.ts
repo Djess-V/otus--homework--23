@@ -13,12 +13,12 @@ const NODE_ENV: Mode = process.env.NODE_ENV as Mode;
 const PREFIX = NODE_ENV === "production" ? `/${pkg.name}` : "";
 
 const config: webpack.Configuration = {
-  entry: { index: resolve(__dirname, "./src/index.tsx") },
+  entry: { index: resolve(__dirname, "./client/src/index.tsx") },
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx"],
   },
   output: {
-    path: resolve(__dirname, "dist"),
+    path: resolve(__dirname, "./client/dist"),
     filename: "[name].[hash].js",
     clean: true,
     environment: {
@@ -50,10 +50,10 @@ const config: webpack.Configuration = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: "index.html",
+      template: "./client/index.html",
     }),
     new HtmlWebpackPlugin({
-      template: "index.html",
+      template: "./client/index.html",
       filename: "404.html",
     }),
     new webpack.DefinePlugin({
@@ -67,7 +67,7 @@ const config: webpack.Configuration = {
   devServer: {
     compress: true,
     port: 9000,
-    watchFiles: ["index.html"],
+    watchFiles: ["./client/index.html"],
     historyApiFallback: true,
   },
 };

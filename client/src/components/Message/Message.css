@@ -1,0 +1,11 @@
+.message {
+  text-align: center;
+}
+.message:not(:last-child) {
+  margin-bottom: 10px;
+}
+
+.message span {
+  color: #70c1ec;
+  font-weight: 600;
+}

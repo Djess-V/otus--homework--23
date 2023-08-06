@@ -1,0 +1,11 @@
+.room-menu__buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.room-menu__buttons > button:first-child {
+    margin-right: 15px;
+}

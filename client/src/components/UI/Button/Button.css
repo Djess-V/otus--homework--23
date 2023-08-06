@@ -1,0 +1,23 @@
+._button {
+  border-radius: 3px;
+  border: none;
+  transition: all 1s;
+  background-color: #70c1ec;
+  font-weight: 600;
+  color: #000;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+._button:hover {
+  background-color: #3c92c0;
+}
+
+._button:disabled {
+  background-color: #97afbd;
+  cursor: not-allowed;
+}
+
+.btn_formStart {
+  min-width: 125px;
+}
