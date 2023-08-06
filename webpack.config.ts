@@ -24,7 +24,7 @@ const config: webpack.Configuration = {
     environment: {
       arrowFunction: false,
     },
-    publicPath: NODE_ENV === "production" ? `/${pkg.name}/` : "/",
+    // publicPath: NODE_ENV === "production" ? `/${pkg.name}/` : "/",
   },
   module: {
     rules: [
